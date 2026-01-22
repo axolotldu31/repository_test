@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recherche de Protéines - RCSB PDB</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .search-section {
+            margin-bottom: 30px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            border: none;
+            background: #f0f0f0;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        
+        .tab:hover {
+            background: #e0e0e0;
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-align {
+            background: #6f42c1;
+            color: white;
+        }
+        
+        .btn-align:hover {
+            background: #5a32a3;
+        }
+        
+        .btn-launch {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-launch:hover {
+            background: linear-gradient(135deg, #218838 0%, #1aa179 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(40, 167, 69, 0.4);
+        }
+        
+        .btn-launch::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn-launch:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .results-section {
+            margin-top: 30px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+        
+        .results-count {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .align-section {
+            background: #f0e7ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .align-section.active {
+            display: block;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        tr:hover {
+            background: #f9f9f9;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .pdb-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .pdb-link:hover {
+            text-decoration: underline;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-pymol {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-pymol:hover {
+            background: #138496;
+            transform: translateY(-1px);
+        }
+        
+        .btn-download {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-download:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+        
+        .btn-script {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .btn-script:hover {
+            background: #e0a800;
+            transform: translateY(-1px);
+        }
+        
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                width: 100%;
+            }
+            
+            table {
+                font-size: 0.9em;
+            }
+        }
+        
+        /* Animation de déconnexion */
+        .logout-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        .logout-overlay.active {
+            display: flex;
+        }
+        
+        .logout-content {
+            text-align: center;
+            color: white;
+            animation: scaleIn 0.5s ease-out;
+        }
+        
+        .logout-icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+            animation: wave 1s ease-in-out;
+        }
+        
+        .logout-text {
+            font-size: 2em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .logout-subtext {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes wave {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-20deg); }
+            75% { transform: rotate(20deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Overlay de déconnexion -->
+    <div class="logout-overlay" id="logout-overlay">
+        <div class="logout-content">
+            <div class="logout-icon">👋</div>
+            <div class="logout-text">À bientôt !</div>
+            <div class="logout-subtext">Déconnexion en cours...</div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="flex: 1;"></div>
+                <div style="text-align: center; flex: 2;">
+                    <h1>🧬 Recherche de Protéines</h1>
+                    <p>Base de données RCSB PDB - Recherche & Alignement PyMOL</p>
+                </div>
+                <div style="flex: 1; text-align: right;">
+                    <div style="color: white; font-size: 0.9em; margin-bottom: 5px;">
+                        👤 {{ username }}
+                    </div>
+                    <a href="#" onclick="handleLogout(event)" id="logout-btn" style="background: rgba(255,255,255,0.2); color: white; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-size: 0.9em; transition: all 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                        🚪 Déconnexion
+                    </a>
+                </div>
+            </div>
+        </header>
+        
+        <div class="content">
+            <div class="search-section">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('keyword')">🔍 Mot-clé</button>
+                    <button class="tab" onclick="switchTab('name')">🧬 Nom de protéine</button>
+                    <button class="tab" onclick="switchTab('organism')">🦠 Organisme</button>
+                    <button class="tab" onclick="switchTab('id')">🆔 ID PDB</button>
+                    <button class="tab" onclick="switchTab('resolution')">📏 Résolution</button>
+                    <button class="tab" onclick="switchTab('advanced')">⚙️ Avancée</button>
+                </div>
+                
+                <!-- Recherche par mot-clé -->
+                <div id="keyword-tab" class="tab-content active">
+                    <div class="form-group">
+                        <label>Recherche générale (mot-clé, description...)</label>
+                        <input type="text" id="keyword-input" placeholder="Ex: covid spike protein">
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre maximum de résultats</label>
+                        <input type="number" id="keyword-max" value="10" min="1" max="100">
+                    </div>
+                    <button class="btn btn-primary" onclick="search('keyword')">Rechercher</button>
+                </div>
+                
+                <!-- Recherche par nom -->
+                <div id="name-tab" class="tab-content">
+                    <div class="form-group">
+                        <label>Nom de la protéine</label>
+                        <input type="text" id="name-input" placeholder="Ex: hemoglobin, insulin">
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre maximum de résultats</label>
+                        <input type="number" id="name-max" value="10" min="1" max="100">
+                    </div>
+                    <button class="btn btn-primary" onclick="search('name')">Rechercher</button>
+                </div>
+                
+                <!-- Recherche par organisme -->
+                <div id="organism-tab" class="tab-content">
+                    <div class="form-group">
+                        <label>Nom scientifique de l'organisme</label>
+                        <input type="text" id="organism-input" placeholder="Ex: Homo sapiens, Escherichia coli">
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre maximum de résultats</label>
+                        <input type="number" id="organism-max" value="10" min="1" max="100">
+                    </div>
+                    <button class="btn btn-primary" onclick="search('organism')">Rechercher</button>
+                </div>
+                
+                <!-- Recherche par ID -->
+                <div id="id-tab" class="tab-content">
+                    <div class="form-group">
+                        <label>ID PDB</label>
+                        <input type="text" id="id-input" placeholder="Ex: 1HHO" maxlength="4">
+                    </div>
+                    <button class="btn btn-primary" onclick="search('id')">Rechercher</button>
+                </div>
+                
+                <!-- Recherche par résolution -->
+                <div id="resolution-tab" class="tab-content">
+                    <div class="form-group">
+                        <label>Résolution maximale (Å)</label>
+                        <input type="number" id="resolution-input" placeholder="Ex: 2.0" step="0.1" min="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre maximum de résultats</label>
+                        <input type="number" id="resolution-max" value="10" min="1" max="100">
+                    </div>
+                    <button class="btn btn-primary" onclick="search('resolution')">Rechercher</button>
+                </div>
+                
+                <!-- Recherche avancée -->
+                <div id="advanced-tab" class="tab-content">
+                    <div class="form-group">
+                        <label>Nom de la protéine *</label>
+                        <input type="text" id="advanced-name" placeholder="Ex: kinase">
+                    </div>
+                    <div class="form-group">
+                        <label>Organisme (optionnel)</label>
+                        <input type="text" id="advanced-organism" placeholder="Ex: Homo sapiens">
+                    </div>
+                    <div class="form-group">
+                        <label>Résolution maximale (optionnel)</label>
+                        <input type="number" id="advanced-resolution" placeholder="Ex: 2.0" step="0.1" min="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre maximum de résultats</label>
+                        <input type="number" id="advanced-max" value="10" min="1" max="100">
+                    </div>
+                    <button class="btn btn-primary" onclick="search('advanced')">Rechercher</button>
+                </div>
+            </div>
+            
+            <!-- Loading -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 20px; color: #667eea; font-weight: 600;">Recherche en cours...</p>
+            </div>
+            
+            <!-- Messages -->
+            <div id="message"></div>
+            
+            <!-- Résultats -->
+            <div class="results-section" id="results" style="display: none;">
+                <div class="results-header">
+                    <div class="results-count" id="results-count">0 résultat(s) trouvé(s)</div>
+                    <button class="btn btn-success" onclick="exportResults()">📥 Exporter en CSV</button>
+                </div>
+                
+                <!-- Section d'alignement -->
+                <div class="align-section" id="align-section">
+                    <h3 style="margin-bottom: 15px; color: #6f42c1;">🧬 Alignement de structures dans PyMOL</h3>
+                    <div id="selected-count" style="margin-bottom: 15px; font-weight: 600; color: #6f42c1;"></div>
+                    
+                    <div style="background: #d1ecf1; padding: 15px; border-left: 4px solid #0c5460; border-radius: 4px; margin-bottom: 15px;">
+                        <h4 style="color: #0c5460; margin-bottom: 10px;">🎯 Fonctionnalité :</h4>
+                        <p style="margin: 0; line-height: 1.6; color: #0c5460;">
+                            Téléchargez une <strong>session PyMOL (.pse)</strong> avec l'alignement déjà fait.
+                            Ouvrez simplement le fichier dans PyMOL et tout est prêt !
+                        </p>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-launch" onclick="createAlignmentSession()">
+                            🧬 Créer session d'alignement
+                        </button>
+                        <button class="btn" style="background: #6c757d; color: white;" onclick="clearSelection()">
+                            ❌ Désélectionner tout
+                        </button>
+                    </div>
+                </div>
+                
+                <div style="overflow-x: auto;">
+                    <table id="results-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"><input type="checkbox" id="select-all" onchange="toggleSelectAll()"></th>
+                                <th>ID PDB</th>
+                                <th>Titre</th>
+                                <th>Résolution</th>
+                                <th>Méthode</th>
+                                <th>Date</th>
+                                <th>Organisme</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/app_clean.js"></script>
+    <script>
+        function handleLogout(event) {
+            event.preventDefault();
+            
+            // Afficher l'overlay avec animation
+            const overlay = document.getElementById('logout-overlay');
+            overlay.classList.add('active');
+            
+            // Attendre 1.5 secondes puis rediriger
+            setTimeout(function() {
+                window.location.href = "{{ url_for('logout') }}";
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
