@@ -1,0 +1,5 @@
+*.pdb
+*.pse
+*.db
+.venv
+.csv
